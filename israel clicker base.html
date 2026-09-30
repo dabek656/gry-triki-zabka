@@ -1,0 +1,1113 @@
+```html
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+maximum-scale=1.0,
+user-scalable=no,
+viewport-fit=cover">
+
+<title>TRIKI Clicker</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050505;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#top {
+    width: 100%;
+    text-align: center;
+    padding-top: max(20px, env(safe-area-inset-top));
+    z-index: 5;
+}
+
+#title {
+    font-size: clamp(24px, 5vw, 42px);
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+#score {
+    margin-top: 8px;
+    font-size: clamp(38px, 9vw, 70px);
+    font-weight: bold;
+}
+
+#perSecond {
+    font-size: 14px;
+    opacity: 0.6;
+    margin-top: 3px;
+}
+
+#starArea {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -45%);
+    width: min(65vw, 360px);
+    height: min(65vw, 360px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#star {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    transform-origin: center;
+
+    filter:
+        drop-shadow(
+            0 0 15px
+            rgba(255,255,255,0.35)
+        );
+
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+
+/* =============================
+   ANIMACJA WCIŚNIĘCIA
+============================= */
+
+#star.pressed {
+    animation: pressAnimation 0.16s ease-out;
+}
+
+@keyframes pressAnimation {
+
+    0% {
+        scale: 1;
+    }
+
+    45% {
+        scale: 0.88;
+    }
+
+    100% {
+        scale: 1;
+    }
+}
+
+
+/* =============================
+   INFORMACJE
+============================= */
+
+#info {
+    position: absolute;
+
+    bottom:
+        max(25px, env(safe-area-inset-bottom));
+
+    left: 0;
+    right: 0;
+
+    text-align: center;
+
+    font-size: 15px;
+
+    opacity: 0.65;
+
+    padding: 0 20px;
+}
+
+#status {
+    margin-bottom: 7px;
+}
+
+#hint {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+#connectBtn,
+#resetBtn {
+
+    border: none;
+
+    border-radius: 12px;
+
+    padding: 12px 20px;
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+#connectBtn {
+
+    margin-top: 12px;
+
+    background: white;
+
+    color: black;
+}
+
+#connectBtn.connected {
+    background: #38e57a;
+}
+
+#resetBtn {
+
+    margin-top: 10px;
+
+    background: #222;
+
+    color: white;
+
+    border: 1px solid #444;
+}
+
+
+/* =============================
+   +PUNKTY
+============================= */
+
+.plus {
+
+    position: fixed;
+
+    pointer-events: none;
+
+    font-size: 24px;
+
+    font-weight: bold;
+
+    animation:
+        floatUp 0.7s ease-out forwards;
+
+    z-index: 20;
+}
+
+@keyframes floatUp {
+
+    0% {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+    100% {
+        opacity: 0;
+
+        transform:
+            translateY(-80px)
+            scale(1.3);
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="game">
+
+    <div id="top">
+
+        <div id="title">
+            TRIKI CLICKER
+        </div>
+
+        <div id="score">
+            0
+        </div>
+
+        <div id="perSecond">
+            Obracaj Trikiem, aby zdobywać punkty
+        </div>
+
+        <button id="connectBtn">
+            POŁĄCZ TRIKI
+        </button>
+
+    </div>
+
+
+    <!-- =========================
+         GWIAZDA DAWIDA
+    ========================== -->
+
+    <div id="starArea">
+
+        <svg
+            id="star"
+            viewBox="0 0 200 200"
+            xmlns="http://www.w3.org/2000/svg">
+
+            <polygon
+                points="
+                    100,10
+                    177.94,145
+                    22.06,145
+                "
+                fill="none"
+                stroke="white"
+                stroke-width="10"
+                stroke-linejoin="round"
+            />
+
+            <polygon
+                points="
+                    100,190
+                    22.06,55
+                    177.94,55
+                "
+                fill="none"
+                stroke="white"
+                stroke-width="10"
+                stroke-linejoin="round"
+            />
+
+        </svg>
+
+    </div>
+
+
+    <div id="info">
+
+        <div id="status">
+            Triki nie jest połączone
+        </div>
+
+        <div id="hint">
+            Obracaj Trikiem albo klikaj gwiazdę
+        </div>
+
+        <button id="resetBtn">
+            RESET
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================
+   TRIKI BLUETOOTH
+========================================= */
+
+const SERVICE_UUID =
+    "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+
+const RX_UUID =
+    "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+const TX_UUID =
+    "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+
+let device = null;
+let server = null;
+let rxCharacteristic = null;
+let txCharacteristic = null;
+let trikiConnected = false;
+
+
+/* =========================================
+   ELEMENTY
+========================================= */
+
+const scoreElement =
+    document.getElementById("score");
+
+const star =
+    document.getElementById("star");
+
+const status =
+    document.getElementById("status");
+
+const connectBtn =
+    document.getElementById("connectBtn");
+
+const resetBtn =
+    document.getElementById("resetBtn");
+
+
+/* =========================================
+   WYNIK
+========================================= */
+
+let score = 0;
+
+
+/* =========================================
+   CZUŁOŚĆ RUCHU
+========================================= */
+
+/*
+   Minimalna prędkość żyroskopu.
+
+   Wartości poniżej tego poziomu
+   są traktowane jako szum.
+*/
+
+const GYRO_DEADZONE = 45;
+
+
+/*
+   Ile stopni trzeba przejechać,
+   żeby przyznać kolejne punkty.
+*/
+
+const DEGREES_PER_POINT = 30;
+
+
+/* =========================================
+   LICZNIK OBROTU
+========================================= */
+
+let accumulatedRotation = 0;
+
+let lastGyroTime = 0;
+
+
+/* =========================================
+   OBRÓT GWIAZDY
+========================================= */
+
+let rotation = 0;
+
+let rotationVelocity = 0;
+
+
+/*
+   Ujemny znak = odwrócony kierunek.
+
+   Mniejsza wartość = mniejsza czułość.
+*/
+
+const ROTATION_SENSITIVITY = -0.12;
+
+const ROTATION_THRESHOLD = 6;
+
+
+/* =========================================
+   PRZYCISK
+========================================= */
+
+let lastButtonState = 0;
+
+
+/* =========================================
+   DODAWANIE PUNKTÓW
+========================================= */
+
+function addPoint(
+    amount = 1,
+    x = window.innerWidth / 2,
+    y = window.innerHeight / 2
+) {
+
+    score += amount;
+
+    scoreElement.textContent =
+        score.toLocaleString("pl-PL");
+
+    showPlus(
+        amount,
+        x,
+        y
+    );
+}
+
+
+/* =========================================
+   +PUNKTY
+========================================= */
+
+function showPlus(
+    amount,
+    x,
+    y
+) {
+
+    const element =
+        document.createElement("div");
+
+    element.className =
+        "plus";
+
+    element.textContent =
+        "+" + amount;
+
+    element.style.left =
+        x + "px";
+
+    element.style.top =
+        y + "px";
+
+    document.body.appendChild(
+        element
+    );
+
+    setTimeout(
+        () => element.remove(),
+        700
+    );
+}
+
+
+/* =========================================
+   ANIMACJA WCIŚNIĘCIA
+========================================= */
+
+function pressStar() {
+
+    star.classList.remove(
+        "pressed"
+    );
+
+    void star.offsetWidth;
+
+    star.classList.add(
+        "pressed"
+    );
+}
+
+
+/* =========================================
+   KLIK GWIAZDY
+========================================= */
+
+star.addEventListener(
+    "pointerdown",
+    event => {
+
+        event.preventDefault();
+
+        addPoint(
+            1,
+            event.clientX,
+            event.clientY
+        );
+
+        pressStar();
+    }
+);
+
+
+/* =========================================
+   POŁĄCZENIE
+========================================= */
+
+connectBtn.addEventListener(
+    "click",
+    connectTriki
+);
+
+
+async function connectTriki() {
+
+    try {
+
+        if (!navigator.bluetooth) {
+
+            status.textContent =
+                "Ta przeglądarka nie obsługuje Web Bluetooth.";
+
+            return;
+        }
+
+
+        status.textContent =
+            "Wybierz TRIKI...";
+
+
+        device =
+            await navigator.bluetooth.requestDevice({
+
+                filters: [
+                    {
+                        namePrefix: "Triki"
+                    }
+                ],
+
+                optionalServices: [
+                    SERVICE_UUID
+                ]
+            });
+
+
+        status.textContent =
+            "Łączenie...";
+
+
+        server =
+            await device.gatt.connect();
+
+
+        const service =
+            await server.getPrimaryService(
+                SERVICE_UUID
+            );
+
+
+        /*
+        Telefon → Triki
+        */
+
+        rxCharacteristic =
+            await service.getCharacteristic(
+                RX_UUID
+            );
+
+
+        /*
+        Triki → telefon
+        */
+
+        txCharacteristic =
+            await service.getCharacteristic(
+                TX_UUID
+            );
+
+
+        await txCharacteristic.startNotifications();
+
+
+        txCharacteristic.addEventListener(
+            "characteristicvaluechanged",
+            handleTrikiData
+        );
+
+
+        /*
+        Uruchomienie IMU.
+        */
+
+        const startCommand =
+            new Uint8Array([
+                0x20,
+                0x10,
+                0x00,
+                0xD0,
+                0x07,
+                0x68,
+                0x00,
+                0x03
+            ]);
+
+
+        await rxCharacteristic
+            .writeValueWithoutResponse(
+                startCommand
+            );
+
+
+        /*
+        READY.
+        */
+
+        const readyCommand =
+            new Uint8Array([
+                0x21,
+                0x00,
+                0x00,
+                0x00,
+                0x00
+            ]);
+
+
+        await rxCharacteristic
+            .writeValueWithoutResponse(
+                readyCommand
+            );
+
+
+        trikiConnected = true;
+
+
+        /*
+        Zerujemy czas pierwszego
+        odczytu żyroskopu.
+        */
+
+        lastGyroTime =
+            performance.now();
+
+
+        accumulatedRotation = 0;
+
+
+        status.textContent =
+            "TRIKI połączone ✓";
+
+
+        connectBtn.textContent =
+            "TRIKI POŁĄCZONE ✓";
+
+
+        connectBtn.classList.add(
+            "connected"
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Błąd połączenia: " +
+            error.message;
+    }
+}
+
+
+/* =========================================
+   DANE TRIKI
+========================================= */
+
+function handleTrikiData(event) {
+
+    const value =
+        event.target.value;
+
+
+    const data =
+        new Uint8Array(
+            value.buffer,
+            value.byteOffset,
+            value.byteLength
+        );
+
+
+    for (
+        let i = 0;
+        i <= data.length - 14;
+        i++
+    ) {
+
+        /*
+        Początek ramki.
+        */
+
+        if (
+            data[i] !== 0x22
+        ) {
+            continue;
+        }
+
+
+        const view =
+            new DataView(
+                data.buffer,
+                data.byteOffset + i,
+                14
+            );
+
+
+        /* =================================
+           PRZYCISK
+        ================================= */
+
+        const button =
+            data[i + 1];
+
+
+        if (
+            button === 1 &&
+            lastButtonState === 0
+        ) {
+
+            lastButtonState = 1;
+
+
+            addPoint(
+                1,
+                window.innerWidth / 2,
+                window.innerHeight / 2
+            );
+
+
+            pressStar();
+
+
+        } else if (
+            button === 0
+        ) {
+
+            lastButtonState = 0;
+        }
+
+
+        /* =================================
+           GYRO
+        ================================= */
+
+        const gyroX =
+            view.getInt16(
+                2,
+                true
+            ) / 131;
+
+
+        const gyroY =
+            view.getInt16(
+                4,
+                true
+            ) / 131;
+
+
+        const gyroZ =
+            view.getInt16(
+                6,
+                true
+            ) / 131;
+
+
+        /* =================================
+           AKCELEROMETR
+        ================================= */
+
+        const accelX =
+            view.getInt16(
+                8,
+                true
+            ) / 16384;
+
+
+        const accelY =
+            view.getInt16(
+                10,
+                true
+            ) / 16384;
+
+
+        const accelZ =
+            view.getInt16(
+                12,
+                true
+            ) / 16384;
+
+
+        /* =================================
+           SIŁA GYRO
+        ================================= */
+
+        const gyroMagnitude =
+            Math.sqrt(
+                gyroX * gyroX +
+                gyroY * gyroY +
+                gyroZ * gyroZ
+            );
+
+
+        /* =================================
+           OBRÓT GWIAZDY
+        ================================= */
+
+        if (
+            Math.abs(gyroZ) >
+            ROTATION_THRESHOLD
+        ) {
+
+            rotationVelocity =
+                gyroZ *
+                ROTATION_SENSITIVITY;
+
+        } else {
+
+            rotationVelocity *=
+                0.90;
+        }
+
+
+        /* =================================
+           PUNKTY ZA RZECZYWISTY OBRÓT
+        ================================= */
+
+        const now =
+            performance.now();
+
+
+        /*
+        Pierwsza ramka po połączeniu.
+        */
+
+        if (lastGyroTime === 0) {
+
+            lastGyroTime = now;
+
+        }
+
+
+        /*
+        Czas od poprzedniej ramki
+        w sekundach.
+        */
+
+        let dt =
+            (now - lastGyroTime) /
+            1000;
+
+
+        lastGyroTime = now;
+
+
+        /*
+        Zabezpieczenie przed dużym
+        skokiem czasu.
+        */
+
+        if (dt > 0.1) {
+            dt = 0.1;
+        }
+
+
+        /*
+        Jeżeli żyroskop jest
+        wystarczająco mocny,
+        dodajemy faktycznie
+        wykonany kąt.
+        */
+
+        if (
+            Math.abs(gyroZ) >
+            GYRO_DEADZONE
+        ) {
+
+            /*
+            gyroZ jest w stopniach/s.
+
+            stopnie/s × sekundy =
+            wykonane stopnie.
+            */
+
+            accumulatedRotation +=
+                Math.abs(gyroZ) * dt;
+
+
+            /*
+            Szybkość określa
+            mnożnik punktów.
+            */
+
+            let multiplier = 1;
+
+
+            /*
+            Normalny obrót.
+            */
+
+            if (
+                Math.abs(gyroZ) >= 100
+            ) {
+
+                multiplier = 2;
+            }
+
+
+            /*
+            Szybszy obrót.
+            */
+
+            if (
+                Math.abs(gyroZ) >= 180
+            ) {
+
+                multiplier = 3;
+            }
+
+
+            /*
+            Bardzo szybki.
+            */
+
+            if (
+                Math.abs(gyroZ) >= 300
+            ) {
+
+                multiplier = 5;
+            }
+
+
+            /*
+            Ekstremalnie szybki.
+            */
+
+            if (
+                Math.abs(gyroZ) >= 500
+            ) {
+
+                multiplier = 8;
+            }
+
+
+            /*
+            Ile pełnych fragmentów
+            obrotu wykonano.
+            */
+
+            const pointSteps =
+                Math.floor(
+                    accumulatedRotation /
+                    DEGREES_PER_POINT
+                );
+
+
+            if (
+                pointSteps > 0
+            ) {
+
+                /*
+                Usuwamy wykorzystane
+                stopnie.
+                */
+
+                accumulatedRotation -=
+                    pointSteps *
+                    DEGREES_PER_POINT;
+
+
+                /*
+                Punkty są przyznawane
+                natychmiast po wykonaniu
+                kolejnych stopni.
+
+                Brak cooldownu.
+                */
+
+                addPoint(
+                    pointSteps *
+                    multiplier,
+
+                    window.innerWidth / 2,
+                    window.innerHeight / 2
+                );
+            }
+
+        } else {
+
+            /*
+            Przy zatrzymaniu nie
+            naliczamy nic.
+
+            Mały szum nie dodaje
+            punktów.
+            */
+
+            if (
+                Math.abs(gyroZ) < 20
+            ) {
+
+                accumulatedRotation = 0;
+            }
+        }
+
+
+        /*
+        Jedna poprawna ramka.
+        */
+
+        break;
+    }
+}
+
+
+/* =========================================
+   ANIMACJA GWIAZDY
+========================================= */
+
+function animate() {
+
+    rotation +=
+        rotationVelocity;
+
+
+    rotationVelocity *=
+        0.94;
+
+
+    star.style.transform =
+        "rotate(" +
+        rotation +
+        "deg)";
+
+
+    requestAnimationFrame(
+        animate
+    );
+}
+
+
+/* =========================================
+   RESET
+========================================= */
+
+resetBtn.addEventListener(
+    "click",
+    () => {
+
+        score = 0;
+
+        scoreElement.textContent =
+            "0";
+
+        rotation = 0;
+
+        rotationVelocity = 0;
+
+        accumulatedRotation = 0;
+
+        lastGyroTime =
+            performance.now();
+    }
+);
+
+
+/* =========================================
+   START
+========================================= */
+
+animate();
+
+</script>
+
+</body>
+</html>
+```
+
