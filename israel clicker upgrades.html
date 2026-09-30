@@ -1,0 +1,1707 @@
+```html
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+maximum-scale=1.0,
+user-scalable=no,
+viewport-fit=cover">
+
+<title>TRIKI Clicker</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050505;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#top {
+    width: 100%;
+    text-align: center;
+    padding-top: max(20px, env(safe-area-inset-top));
+    z-index: 5;
+}
+
+#title {
+    font-size: clamp(24px, 5vw, 42px);
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+#score {
+    margin-top: 8px;
+    font-size: clamp(38px, 9vw, 70px);
+    font-weight: bold;
+}
+
+#perSecond {
+    font-size: 14px;
+    opacity: 0.6;
+    margin-top: 3px;
+}
+
+#starArea {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -45%);
+    width: min(65vw, 360px);
+    height: min(65vw, 360px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#star {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    transform-origin: center;
+
+    filter:
+        drop-shadow(
+            0 0 15px
+            rgba(255,255,255,0.35)
+        );
+
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+#comboIndicator {
+    position: fixed;
+    z-index: 20;
+    top: max(18px, env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+    width: 150px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s ease-out;
+}
+
+#comboIndicator.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+#comboTitle {
+    margin-bottom: 7px;
+    font-family: "Comic Sans MS", "Comic Sans", cursive;
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+#comboBar {
+    width: 100%;
+    height: 9px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 5px;
+    background: rgba(20, 20, 20, 0.8);
+}
+
+#comboBarFill {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: #ff8500;
+    transition: width 3s linear;
+}
+
+#autoStickOrbit {
+    position: absolute;
+    inset: -18px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+}
+
+#autoStickOrbit.active {
+    opacity: 1;
+    animation: stickRotation 5s linear infinite;
+}
+
+.stick-arm {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 26px;
+    height: 5px;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+    transform: translate(-50%, -50%) rotate(var(--stick-angle, 90deg));
+}
+
+.stick-arm::after {
+    content: "";
+    position: absolute;
+    right: -3px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #fff;
+    transform: translateY(-50%);
+}
+
+.stick-arm.pressing {
+    animation: stickPress var(--press-duration, 0.28s) ease-in-out;
+}
+
+@keyframes stickRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(-360deg); }
+}
+
+@keyframes stickPress {
+    0%, 100% { transform: translate(-50%, -50%) rotate(var(--stick-angle, 90deg)); }
+    45% { transform: translate(-50%, -50%) rotate(var(--stick-angle, 90deg)) translateX(8px); }
+}
+
+#upgradeDrawer {
+    position: fixed;
+    z-index: 10;
+    top: 50%;
+    right: 0;
+    width: min(270px, 84vw);
+    transform: translate(calc(100% - 58px), -50%);
+    transition: transform 0.24s ease-out;
+}
+
+#upgradeDrawer.open {
+    transform: translate(0, -50%);
+}
+
+#upgradePanel {
+    width: 100%;
+    max-height: min(78vh, 600px);
+    padding: 16px;
+    border: 1px solid #39352a;
+    border-radius: 8px 0 0 8px;
+    background: rgba(18, 17, 14, 0.96);
+    overflow-y: auto;
+}
+
+#upgradeHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+#upgradeToggle {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    border: 1px solid #514a37;
+    border-radius: 6px;
+    background: #24221d;
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#upgradeTitle {
+    color: #f2c14e;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.upgrade-name {
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.upgrade-description {
+    margin-top: 6px;
+    color: #aaa;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+#stickUpgrade + .upgrade-item {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #39352a;
+}
+
+#buyStickBtn,
+#buyDawidBtn {
+    width: 100%;
+    margin-top: 13px;
+    padding: 10px;
+    border: 0;
+    border-radius: 6px;
+    background: #f2c14e;
+    color: #17140b;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#buyStickBtn:disabled,
+#buyDawidBtn:disabled {
+    background: #38352d;
+    color: #929087;
+    cursor: default;
+}
+
+@media (max-width: 760px) {
+    #starArea {
+        left: 32%;
+        width: min(48vw, 280px);
+        height: min(48vw, 280px);
+    }
+
+    #upgradePanel {
+        padding: 12px;
+    }
+
+    #upgradeTitle {
+        font-size: 13px;
+    }
+
+    .upgrade-name {
+        font-size: 15px;
+    }
+
+    .upgrade-description {
+        font-size: 12px;
+    }
+}
+
+
+/* =============================
+   ANIMACJA WCIŚNIĘCIA
+============================= */
+
+#star.pressed {
+    animation: pressAnimation 0.16s ease-out;
+}
+
+@keyframes pressAnimation {
+
+    0% {
+        scale: 1;
+    }
+
+    45% {
+        scale: 0.88;
+    }
+
+    100% {
+        scale: 1;
+    }
+}
+
+
+/* =============================
+   INFORMACJE
+============================= */
+
+#info {
+    position: absolute;
+
+    bottom:
+        max(25px, env(safe-area-inset-bottom));
+
+    left: 0;
+    right: 0;
+
+    text-align: center;
+
+    font-size: 15px;
+
+    opacity: 0.65;
+
+    padding: 0 20px;
+}
+
+#status {
+    margin-bottom: 7px;
+}
+
+#hint {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+#connectBtn,
+#resetBtn {
+
+    border: none;
+
+    border-radius: 12px;
+
+    padding: 12px 20px;
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+#connectBtn {
+
+    margin-top: 12px;
+
+    background: white;
+
+    color: black;
+}
+
+#connectBtn.connected {
+    background: #38e57a;
+}
+
+#resetBtn {
+
+    margin-top: 10px;
+
+    background: #222;
+
+    color: white;
+
+    border: 1px solid #444;
+}
+
+
+/* =============================
+   +PUNKTY
+============================= */
+
+.plus {
+
+    position: fixed;
+
+    pointer-events: none;
+
+    font-size: 24px;
+
+    font-weight: bold;
+
+    animation:
+        floatUp 0.7s ease-out forwards;
+
+    z-index: 20;
+}
+
+@keyframes floatUp {
+
+    0% {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+    100% {
+        opacity: 0;
+
+        transform:
+            translateY(-80px)
+            scale(1.3);
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="game">
+
+    <div id="top">
+
+        <div id="title">
+            TRIKI CLICKER
+        </div>
+
+        <div id="score">
+            0
+        </div>
+
+        <div id="perSecond">
+            Obracaj Trikiem, aby zdobywać punkty
+        </div>
+
+        <button id="connectBtn">
+            POŁĄCZ TRIKI
+        </button>
+
+    </div>
+
+
+    <!-- =========================
+         GWIAZDA DAWIDA
+    ========================== -->
+
+    <div id="comboIndicator" aria-hidden="true" aria-live="polite">
+        <div id="comboTitle">WOW!</div>
+        <div id="comboBar" role="progressbar" aria-label="Czas combo" aria-valuemin="0" aria-valuemax="3" aria-valuenow="3">
+            <div id="comboBarFill"></div>
+        </div>
+    </div>
+
+    <div id="starArea">
+
+        <svg
+            id="star"
+            viewBox="0 0 200 200"
+            xmlns="http://www.w3.org/2000/svg">
+
+            <polygon
+                points="
+                    100,10
+                    177.94,145
+                    22.06,145
+                "
+                fill="none"
+                stroke="white"
+                stroke-width="10"
+                stroke-linejoin="round"
+            />
+
+            <polygon
+                points="
+                    100,190
+                    22.06,55
+                    177.94,55
+                "
+                fill="none"
+                stroke="white"
+                stroke-width="10"
+                stroke-linejoin="round"
+            />
+
+        </svg>
+
+        <div id="autoStickOrbit" aria-hidden="true">
+        </div>
+
+    </div>
+
+    <div id="upgradeDrawer">
+        <aside id="upgradePanel" aria-label="Ulepszenia">
+            <div id="upgradeHeader">
+                <button id="upgradeToggle" type="button" aria-expanded="false" aria-controls="upgradePanel" aria-label="Pokaż ulepszenia">‹</button>
+                <div id="upgradeTitle">Ulepszenia</div>
+            </div>
+
+            <div id="stickUpgrade" class="upgrade-item">
+                <div class="upgrade-name">Automatyczny patyk</div>
+                <div class="upgrade-description">Każdy daje +1 punkt co 5 sekund. Naciskają po kolei.</div>
+                <div id="stickCount" class="upgrade-description">Posiadane: 0</div>
+                <button id="buyStickBtn" type="button" disabled>
+                    Kup za 10 punktów
+                </button>
+            </div>
+
+            <div class="upgrade-item">
+                <div class="upgrade-name">Dawid Anh</div>
+                <div class="upgrade-description">Każdy daje +1 punkt co 2 sekundy.</div>
+                <div id="dawidCount" class="upgrade-description">Posiadane: 0</div>
+                <button id="buyDawidBtn" type="button" disabled>
+                    Kup za 100 punktów
+                </button>
+            </div>
+        </aside>
+    </div>
+
+
+    <div id="info">
+
+        <div id="status">
+            Triki nie jest połączone
+        </div>
+
+        <div id="hint">
+            Obracaj Trikiem albo klikaj gwiazdę
+        </div>
+
+        <button id="resetBtn">
+            RESET
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================
+   TRIKI BLUETOOTH
+========================================= */
+
+const SERVICE_UUID =
+    "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+
+const RX_UUID =
+    "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+const TX_UUID =
+    "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+
+let device = null;
+let server = null;
+let rxCharacteristic = null;
+let txCharacteristic = null;
+let trikiConnected = false;
+
+
+/* =========================================
+   ELEMENTY
+========================================= */
+
+const scoreElement =
+    document.getElementById("score");
+
+const comboIndicator =
+    document.getElementById("comboIndicator");
+
+const comboBar =
+    document.getElementById("comboBar");
+
+const comboBarFill =
+    document.getElementById("comboBarFill");
+
+const star =
+    document.getElementById("star");
+
+const status =
+    document.getElementById("status");
+
+const connectBtn =
+    document.getElementById("connectBtn");
+
+const resetBtn =
+    document.getElementById("resetBtn");
+
+const upgradeDrawer =
+    document.getElementById("upgradeDrawer");
+
+const upgradeToggle =
+    document.getElementById("upgradeToggle");
+
+const buyStickBtn =
+    document.getElementById("buyStickBtn");
+
+const stickCountElement =
+    document.getElementById("stickCount");
+
+const buyDawidBtn =
+    document.getElementById("buyDawidBtn");
+
+const dawidCountElement =
+    document.getElementById("dawidCount");
+
+const autoStickOrbit =
+    document.getElementById("autoStickOrbit");
+
+
+/* =========================================
+   WYNIK
+========================================= */
+
+let score = 0;
+const autoSticks = [];
+let autoStickIndex = 0;
+let autoStickTimer = null;
+const AUTO_STICK_COST_INCREMENT = 10;
+let dawidAnhCount = 0;
+let dawidAnhTimer = null;
+const DAWID_ANH_COST_INCREMENT = 100;
+
+
+/* =========================================
+   CZUŁOŚĆ RUCHU
+========================================= */
+
+/*
+   Minimalna prędkość żyroskopu.
+
+   Wartości poniżej tego poziomu
+   są traktowane jako szum.
+*/
+
+const GYRO_DEADZONE = 45;
+
+
+/*
+   Ile stopni trzeba przejechać,
+   żeby przyznać kolejne punkty.
+*/
+
+const DEGREES_PER_POINT = 30;
+
+
+/* =========================================
+   LICZNIK OBROTU
+========================================= */
+
+let accumulatedRotation = 0;
+
+let lastGyroTime = 0;
+
+
+/* =========================================
+   OBRÓT GWIAZDY
+========================================= */
+
+let rotation = 0;
+
+let rotationVelocity = 0;
+let lastRightThreePointTime = 0;
+let comboEndsAt = 0;
+let comboTimeout = null;
+
+
+/*
+   Ujemny znak = odwrócony kierunek.
+
+   Mniejsza wartość = mniejsza czułość.
+*/
+
+const ROTATION_SENSITIVITY = -0.12;
+
+const ROTATION_THRESHOLD = 6;
+
+
+/* =========================================
+   PRZYCISK
+========================================= */
+
+let lastButtonState = 0;
+
+
+/* =========================================
+   DODAWANIE PUNKTÓW
+========================================= */
+
+function addPoint(
+    amount = 1,
+    x = window.innerWidth / 2,
+    y = window.innerHeight / 2
+) {
+
+    score += amount;
+
+    scoreElement.textContent =
+        score.toLocaleString("pl-PL");
+
+    updateUpgradeButton();
+
+    showPlus(
+        amount,
+        x,
+        y
+    );
+}
+
+
+function activateCombo() {
+
+    if (comboTimeout !== null) {
+        clearTimeout(comboTimeout);
+    }
+
+    comboEndsAt =
+        performance.now() + 3000;
+
+    comboIndicator.classList.add("active");
+    comboIndicator.setAttribute("aria-hidden", "false");
+    comboBar.setAttribute("aria-valuenow", "3");
+
+    comboBarFill.style.transition = "none";
+    comboBarFill.style.width = "100%";
+    void comboBarFill.offsetWidth;
+    comboBarFill.style.transition = "width 3s linear";
+    comboBarFill.style.width = "0%";
+
+    comboTimeout = setTimeout(
+        () => {
+            comboEndsAt = 0;
+            comboTimeout = null;
+            comboIndicator.classList.remove("active");
+            comboIndicator.setAttribute("aria-hidden", "true");
+            comboBarFill.style.transition = "none";
+            comboBarFill.style.width = "100%";
+        },
+        3000
+    );
+}
+
+
+function addRotationPoints(amount, isRightTurn) {
+
+    const now =
+        performance.now();
+
+    if (comboEndsAt <= now) {
+        if (amount === 3 && isRightTurn) {
+            lastRightThreePointTime = now;
+        } else if (
+            amount === 3 &&
+            !isRightTurn &&
+            lastRightThreePointTime > 0 &&
+            now - lastRightThreePointTime <= 500
+        ) {
+            activateCombo();
+            lastRightThreePointTime = 0;
+        } else {
+            lastRightThreePointTime = 0;
+        }
+    }
+
+    const comboMultiplier =
+        performance.now() < comboEndsAt ? 2 : 1;
+
+    addPoint(
+        amount * comboMultiplier,
+        window.innerWidth / 2,
+        window.innerHeight / 2
+    );
+}
+
+
+function updateUpgradeButton() {
+
+    const nextCost =
+        AUTO_STICK_COST_INCREMENT * (autoSticks.length + 1);
+
+    const nextDawidCost =
+        DAWID_ANH_COST_INCREMENT * (dawidAnhCount + 1);
+
+    buyStickBtn.disabled =
+        score < nextCost;
+
+    buyStickBtn.textContent =
+        `Kup za ${nextCost} punktów`;
+
+    stickCountElement.textContent =
+        `Posiadane: ${autoSticks.length}`;
+
+    buyDawidBtn.disabled =
+        score < nextDawidCost;
+
+    buyDawidBtn.textContent =
+        `Kup za ${nextDawidCost} punktów`;
+
+    dawidCountElement.textContent =
+        `Posiadane: ${dawidAnhCount}`;
+}
+
+
+function addAutoStick() {
+
+    const stick =
+        document.createElement("div");
+
+    stick.className =
+        "stick-arm";
+
+    autoSticks.push(stick);
+    autoStickOrbit.appendChild(stick);
+
+    arrangeAutoSticks();
+}
+
+
+function arrangeAutoSticks() {
+
+    const count =
+        autoSticks.length;
+
+    const radius =
+        autoStickOrbit.clientWidth / 2;
+
+    autoSticks.forEach(
+        (stick, index) => {
+            const angle =
+                (360 * index) / count;
+
+            const radians =
+                (angle - 90) * Math.PI / 180;
+
+            const x =
+                Math.cos(radians) * radius;
+
+            const y =
+                Math.sin(radians) * radius;
+
+            stick.style.left =
+                `calc(50% + ${x}px)`;
+
+            stick.style.top =
+                `calc(50% + ${y}px)`;
+
+            stick.style.setProperty(
+                "--stick-angle",
+                `${angle + 90}deg`
+            );
+        }
+    );
+}
+
+
+window.addEventListener(
+    "resize",
+    arrangeAutoSticks
+);
+
+
+function startAutoStickTimer() {
+
+    if (autoStickTimer !== null) {
+        clearInterval(autoStickTimer);
+    }
+
+    const interval =
+        5000 / autoSticks.length;
+
+    autoStickOrbit.style.setProperty(
+        "--press-duration",
+        `${Math.min(280, interval * 0.8)}ms`
+    );
+
+    autoStickTimer = setInterval(
+        () => {
+            const stick =
+                autoSticks[autoStickIndex];
+
+            autoStickIndex =
+                (autoStickIndex + 1) % autoSticks.length;
+
+            addPoint();
+            pressStar();
+            pressAutoStick(stick);
+        },
+        interval
+    );
+}
+
+
+function startDawidAnhTimer() {
+
+    if (dawidAnhTimer !== null) {
+        clearInterval(dawidAnhTimer);
+    }
+
+    dawidAnhTimer = setInterval(
+        () => addPoint(dawidAnhCount),
+        2000
+    );
+}
+
+
+function setUpgradeDrawerOpen(isOpen) {
+
+    upgradeDrawer.classList.toggle(
+        "open",
+        isOpen
+    );
+
+    upgradeToggle.setAttribute(
+        "aria-expanded",
+        String(isOpen)
+    );
+
+    upgradeToggle.setAttribute(
+        "aria-label",
+        isOpen ? "Ukryj ulepszenia" : "Pokaż ulepszenia"
+    );
+
+    upgradeToggle.textContent =
+        isOpen ? "›" : "‹";
+}
+
+
+upgradeToggle.addEventListener(
+    "click",
+    () => setUpgradeDrawerOpen(
+        !upgradeDrawer.classList.contains("open")
+    )
+);
+
+
+document.addEventListener(
+    "keydown",
+    event => {
+        if (event.key === "Escape") {
+            setUpgradeDrawerOpen(false);
+        }
+    }
+);
+
+
+buyStickBtn.addEventListener(
+    "click",
+    () => {
+
+        const cost =
+            AUTO_STICK_COST_INCREMENT * (autoSticks.length + 1);
+
+        if (score < cost) {
+            return;
+        }
+
+        score -= cost;
+        scoreElement.textContent =
+            score.toLocaleString("pl-PL");
+
+        addAutoStick();
+        autoStickOrbit.classList.add("active");
+        updateUpgradeButton();
+        startAutoStickTimer();
+    }
+);
+
+
+buyDawidBtn.addEventListener(
+    "click",
+    () => {
+
+        const cost =
+            DAWID_ANH_COST_INCREMENT * (dawidAnhCount + 1);
+
+        if (score < cost) {
+            return;
+        }
+
+        score -= cost;
+        scoreElement.textContent =
+            score.toLocaleString("pl-PL");
+
+        dawidAnhCount += 1;
+        updateUpgradeButton();
+        startDawidAnhTimer();
+    }
+);
+
+
+/* =========================================
+   +PUNKTY
+========================================= */
+
+function showPlus(
+    amount,
+    x,
+    y
+) {
+
+    const element =
+        document.createElement("div");
+
+    element.className =
+        "plus";
+
+    element.textContent =
+        "+" + amount;
+
+    element.style.left =
+        x + "px";
+
+    element.style.top =
+        y + "px";
+
+    document.body.appendChild(
+        element
+    );
+
+    setTimeout(
+        () => element.remove(),
+        700
+    );
+}
+
+
+/* =========================================
+   ANIMACJA WCIŚNIĘCIA
+========================================= */
+
+function pressStar() {
+
+    star.classList.remove(
+        "pressed"
+    );
+
+    void star.offsetWidth;
+
+    star.classList.add(
+        "pressed"
+    );
+}
+
+
+function pressAutoStick(stick) {
+
+    stick.classList.remove(
+        "pressing"
+    );
+
+    void stick.offsetWidth;
+
+    stick.classList.add(
+        "pressing"
+    );
+}
+
+
+/* =========================================
+   KLIK GWIAZDY
+========================================= */
+
+star.addEventListener(
+    "pointerdown",
+    event => {
+
+        event.preventDefault();
+
+        addPoint(
+            1,
+            event.clientX,
+            event.clientY
+        );
+
+        pressStar();
+    }
+);
+
+
+/* =========================================
+   POŁĄCZENIE
+========================================= */
+
+connectBtn.addEventListener(
+    "click",
+    connectTriki
+);
+
+
+async function connectTriki() {
+
+    try {
+
+        if (!navigator.bluetooth) {
+
+            status.textContent =
+                "Ta przeglądarka nie obsługuje Web Bluetooth.";
+
+            return;
+        }
+
+
+        status.textContent =
+            "Wybierz TRIKI...";
+
+
+        device =
+            await navigator.bluetooth.requestDevice({
+
+                filters: [
+                    {
+                        namePrefix: "Triki"
+                    }
+                ],
+
+                optionalServices: [
+                    SERVICE_UUID
+                ]
+            });
+
+
+        status.textContent =
+            "Łączenie...";
+
+
+        server =
+            await device.gatt.connect();
+
+
+        const service =
+            await server.getPrimaryService(
+                SERVICE_UUID
+            );
+
+
+        /*
+        Telefon → Triki
+        */
+
+        rxCharacteristic =
+            await service.getCharacteristic(
+                RX_UUID
+            );
+
+
+        /*
+        Triki → telefon
+        */
+
+        txCharacteristic =
+            await service.getCharacteristic(
+                TX_UUID
+            );
+
+
+        await txCharacteristic.startNotifications();
+
+
+        txCharacteristic.addEventListener(
+            "characteristicvaluechanged",
+            handleTrikiData
+        );
+
+
+        /*
+        Uruchomienie IMU.
+        */
+
+        const startCommand =
+            new Uint8Array([
+                0x20,
+                0x10,
+                0x00,
+                0xD0,
+                0x07,
+                0x68,
+                0x00,
+                0x03
+            ]);
+
+
+        await rxCharacteristic
+            .writeValueWithoutResponse(
+                startCommand
+            );
+
+
+        /*
+        READY.
+        */
+
+        const readyCommand =
+            new Uint8Array([
+                0x21,
+                0x00,
+                0x00,
+                0x00,
+                0x00
+            ]);
+
+
+        await rxCharacteristic
+            .writeValueWithoutResponse(
+                readyCommand
+            );
+
+
+        trikiConnected = true;
+
+
+        /*
+        Zerujemy czas pierwszego
+        odczytu żyroskopu.
+        */
+
+        lastGyroTime =
+            performance.now();
+
+
+        accumulatedRotation = 0;
+
+
+        status.textContent =
+            "TRIKI połączone ✓";
+
+
+        connectBtn.textContent =
+            "TRIKI POŁĄCZONE ✓";
+
+
+        connectBtn.classList.add(
+            "connected"
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Błąd połączenia: " +
+            error.message;
+    }
+}
+
+
+/* =========================================
+   DANE TRIKI
+========================================= */
+
+function handleTrikiData(event) {
+
+    const value =
+        event.target.value;
+
+
+    const data =
+        new Uint8Array(
+            value.buffer,
+            value.byteOffset,
+            value.byteLength
+        );
+
+
+    for (
+        let i = 0;
+        i <= data.length - 14;
+        i++
+    ) {
+
+        /*
+        Początek ramki.
+        */
+
+        if (
+            data[i] !== 0x22
+        ) {
+            continue;
+        }
+
+
+        const view =
+            new DataView(
+                data.buffer,
+                data.byteOffset + i,
+                14
+            );
+
+
+        /* =================================
+           PRZYCISK
+        ================================= */
+
+        const button =
+            data[i + 1];
+
+
+        if (
+            button === 1 &&
+            lastButtonState === 0
+        ) {
+
+            lastButtonState = 1;
+
+
+            addPoint(
+                1,
+                window.innerWidth / 2,
+                window.innerHeight / 2
+            );
+
+
+            pressStar();
+
+
+        } else if (
+            button === 0
+        ) {
+
+            lastButtonState = 0;
+        }
+
+
+        /* =================================
+           GYRO
+        ================================= */
+
+        const gyroX =
+            view.getInt16(
+                2,
+                true
+            ) / 131;
+
+
+        const gyroY =
+            view.getInt16(
+                4,
+                true
+            ) / 131;
+
+
+        const gyroZ =
+            view.getInt16(
+                6,
+                true
+            ) / 131;
+
+
+        /* =================================
+           AKCELEROMETR
+        ================================= */
+
+        const accelX =
+            view.getInt16(
+                8,
+                true
+            ) / 16384;
+
+
+        const accelY =
+            view.getInt16(
+                10,
+                true
+            ) / 16384;
+
+
+        const accelZ =
+            view.getInt16(
+                12,
+                true
+            ) / 16384;
+
+
+        /* =================================
+           SIŁA GYRO
+        ================================= */
+
+        const gyroMagnitude =
+            Math.sqrt(
+                gyroX * gyroX +
+                gyroY * gyroY +
+                gyroZ * gyroZ
+            );
+
+
+        /* =================================
+           OBRÓT GWIAZDY
+        ================================= */
+
+        if (
+            Math.abs(gyroZ) >
+            ROTATION_THRESHOLD
+        ) {
+
+            rotationVelocity =
+                gyroZ *
+                ROTATION_SENSITIVITY;
+
+        } else {
+
+            rotationVelocity *=
+                0.90;
+        }
+
+
+        /* =================================
+           PUNKTY ZA RZECZYWISTY OBRÓT
+        ================================= */
+
+        const now =
+            performance.now();
+
+
+        /*
+        Pierwsza ramka po połączeniu.
+        */
+
+        if (lastGyroTime === 0) {
+
+            lastGyroTime = now;
+
+        }
+
+
+        /*
+        Czas od poprzedniej ramki
+        w sekundach.
+        */
+
+        let dt =
+            (now - lastGyroTime) /
+            1000;
+
+
+        lastGyroTime = now;
+
+
+        /*
+        Zabezpieczenie przed dużym
+        skokiem czasu.
+        */
+
+        if (dt > 0.1) {
+            dt = 0.1;
+        }
+
+
+        /*
+        Jeżeli żyroskop jest
+        wystarczająco mocny,
+        dodajemy faktycznie
+        wykonany kąt.
+        */
+
+        if (
+            Math.abs(gyroZ) >
+            GYRO_DEADZONE
+        ) {
+
+            /*
+            gyroZ jest w stopniach/s.
+
+            stopnie/s × sekundy =
+            wykonane stopnie.
+            */
+
+            accumulatedRotation +=
+                Math.abs(gyroZ) * dt;
+
+
+            /*
+            Szybkość określa
+            mnożnik punktów.
+            */
+
+            let multiplier = 1;
+
+
+            /*
+            Normalny obrót.
+            */
+
+            if (
+                Math.abs(gyroZ) >= 100
+            ) {
+
+                multiplier = 2;
+            }
+
+
+            /*
+            Szybszy obrót.
+            */
+
+            if (
+                Math.abs(gyroZ) >= 180
+            ) {
+
+                multiplier = 3;
+            }
+
+
+            /*
+            Bardzo szybki.
+            */
+
+            if (
+                Math.abs(gyroZ) >= 300
+            ) {
+
+                multiplier = 5;
+            }
+
+
+            /*
+            Ekstremalnie szybki.
+            */
+
+            if (
+                Math.abs(gyroZ) >= 500
+            ) {
+
+                multiplier = 8;
+            }
+
+
+            /*
+            Ile pełnych fragmentów
+            obrotu wykonano.
+            */
+
+            const pointSteps =
+                Math.floor(
+                    accumulatedRotation /
+                    DEGREES_PER_POINT
+                );
+
+
+            if (
+                pointSteps > 0
+            ) {
+
+                /*
+                Usuwamy wykorzystane
+                stopnie.
+                */
+
+                accumulatedRotation -=
+                    pointSteps *
+                    DEGREES_PER_POINT;
+
+
+                /*
+                Punkty są przyznawane
+                natychmiast po wykonaniu
+                kolejnych stopni.
+
+                Brak cooldownu.
+                */
+
+                addRotationPoints(
+                    pointSteps *
+                    multiplier,
+                    gyroZ * ROTATION_SENSITIVITY > 0
+                );
+            }
+
+        } else {
+
+            /*
+            Przy zatrzymaniu nie
+            naliczamy nic.
+
+            Mały szum nie dodaje
+            punktów.
+            */
+
+            if (
+                Math.abs(gyroZ) < 20
+            ) {
+
+                accumulatedRotation = 0;
+            }
+        }
+
+
+        /*
+        Jedna poprawna ramka.
+        */
+
+        break;
+    }
+}
+
+
+/* =========================================
+   ANIMACJA GWIAZDY
+========================================= */
+
+function animate() {
+
+    rotation +=
+        rotationVelocity;
+
+
+    rotationVelocity *=
+        0.94;
+
+
+    star.style.transform =
+        "rotate(" +
+        rotation +
+        "deg)";
+
+
+    requestAnimationFrame(
+        animate
+    );
+}
+
+
+/* =========================================
+   RESET
+========================================= */
+
+resetBtn.addEventListener(
+    "click",
+    () => {
+
+        score = 0;
+
+        scoreElement.textContent =
+            "0";
+
+        updateUpgradeButton();
+
+        rotation = 0;
+
+        rotationVelocity = 0;
+
+        accumulatedRotation = 0;
+
+        lastRightThreePointTime = 0;
+        comboEndsAt = 0;
+
+        if (comboTimeout !== null) {
+            clearTimeout(comboTimeout);
+            comboTimeout = null;
+        }
+
+        comboIndicator.classList.remove("active");
+        comboIndicator.setAttribute("aria-hidden", "true");
+        comboBarFill.style.transition = "none";
+        comboBarFill.style.width = "100%";
+
+        lastGyroTime =
+            performance.now();
+    }
+);
+
+
+/* =========================================
+   START
+========================================= */
+
+animate();
+
+</script>
+
+</body>
+</html>
+```
