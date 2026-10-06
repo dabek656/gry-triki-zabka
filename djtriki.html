@@ -40,6 +40,8 @@ html, body {
 
 .menu-box {
     width: min(92%, 440px);
+    max-height: 94vh;
+    overflow-y: auto;
 
     background: #181818;
 
@@ -105,6 +107,31 @@ button:disabled {
     font-size: 16px;
 }
 
+#youtubeLabel {
+    display: block;
+    margin-top: 18px;
+    color: #aaa;
+    text-align: left;
+}
+
+#youtubeInput {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #0d0d0d;
+    color: white;
+    font-size: 16px;
+}
+
+#musicStatus {
+    margin-top: 8px;
+    color: #aaa;
+    text-align: left;
+    font-size: 13px;
+}
+
 #sensor {
     margin-top: 15px;
 
@@ -148,6 +175,18 @@ button:disabled {
     opacity: .95;
     pointer-events: none;
     z-index: 0;
+}
+
+#youtubePlayer {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: min(320px, 32vw);
+    min-width: 200px;
+    height: 180px;
+    border: 0;
+    border-radius: 10px;
+    z-index: 60;
 }
 
 
@@ -561,6 +600,17 @@ button:disabled {
                    required>
         </label>
 
+        <label id="youtubeLabel" for="youtubeInput">
+            Link do muzyki z YouTube (opcjonalnie)
+            <input id="youtubeInput"
+                   type="url"
+                   placeholder="https://www.youtube.com/watch?v=..."
+                   autocomplete="url">
+        </label>
+        <div id="musicStatus" role="status">
+            Muzyka zacznie grać po naciśnięciu START.
+        </div>
+
         <p>
             Poruszaj nadgarstkiem,
             aby zmieniać tor.
@@ -608,6 +658,14 @@ button:disabled {
     <canvas id="visualizer"
             aria-hidden="true">
     </canvas>
+
+    <iframe id="youtubePlayer"
+            title="Odtwarzacz YouTube"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+            hidden>
+    </iframe>
 
     <div id="score">
         0
@@ -718,6 +776,21 @@ const startButton =
 const bpmInput =
     document.getElementById(
         "bpmInput"
+    );
+
+const youtubeInput =
+    document.getElementById(
+        "youtubeInput"
+    );
+
+const musicStatus =
+    document.getElementById(
+        "musicStatus"
+    );
+
+const youtubePlayer =
+    document.getElementById(
+        "youtubePlayer"
     );
 
 const bpmText =
@@ -2429,6 +2502,49 @@ connectButton.addEventListener(
    START GRY
 ================================================== */
 
+function getYouTubeVideoId(value) {
+
+    let url;
+
+    try {
+        url = new URL(value);
+    } catch {
+        return null;
+    }
+
+    const host =
+        url.hostname.toLowerCase().replace(/^www\./, "");
+
+    let videoId = null;
+
+    if (host === "youtu.be") {
+        videoId =
+            url.pathname.split("/").filter(Boolean)[0];
+    } else if (
+        host === "youtube.com" ||
+        host === "m.youtube.com" ||
+        host === "music.youtube.com"
+    ) {
+        if (url.pathname === "/watch") {
+            videoId =
+                url.searchParams.get("v");
+        } else {
+            const pathParts =
+                url.pathname.split("/").filter(Boolean);
+
+            if (
+                ["embed", "shorts", "live"].includes(pathParts[0])
+            ) {
+                videoId = pathParts[1];
+            }
+        }
+    }
+
+    return videoId && /^[A-Za-z0-9_-]{11}$/.test(videoId)
+        ? videoId
+        : null;
+}
+
 startButton.addEventListener(
     "click",
     () => {
@@ -2436,6 +2552,21 @@ startButton.addEventListener(
         if (
             !bpmInput.reportValidity()
         ) {
+
+            return;
+        }
+
+        const youtubeUrl =
+            youtubeInput.value.trim();
+
+        const youtubeVideoId =
+            youtubeUrl
+                ? getYouTubeVideoId(youtubeUrl)
+                : null;
+
+        if (youtubeUrl && !youtubeVideoId) {
+            musicStatus.textContent =
+                "❌ Podaj prawidłowy link do filmu YouTube.";
 
             return;
         }
@@ -2458,6 +2589,16 @@ startButton.addEventListener(
 
         game.style.display =
             "block";
+
+        if (youtubeVideoId) {
+            youtubePlayer.src =
+                "https://www.youtube.com/embed/" +
+                encodeURIComponent(youtubeVideoId) +
+                "?autoplay=1&controls=1&playsinline=1&rel=0";
+
+            youtubePlayer.hidden =
+                false;
+        }
 
 
         score =
