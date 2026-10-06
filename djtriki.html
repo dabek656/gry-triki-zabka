@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triki Guitar Hero Style</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050505;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+/* ==================================================
+   MENU
+================================================== */
+
+#menu {
+    position: fixed;
+    inset: 0;
+
+    background: #050505;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 100;
+}
+
+.menu-box {
+    width: min(92%, 440px);
+
+    background: #181818;
+
+    padding: 30px;
+
+    border-radius: 20px;
+
+    text-align: center;
+}
+
+.menu-box h1 {
+    margin-top: 0;
+}
+
+.menu-box p {
+    color: #aaa;
+    line-height: 1.5;
+}
+
+button {
+    width: 100%;
+
+    padding: 15px;
+
+    margin-top: 12px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: white;
+    color: black;
+
+    font-size: 16px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: .35;
+}
+
+#status {
+    margin-top: 18px;
+    color: #aaa;
+}
+
+#bpmLabel {
+    display: block;
+    margin-top: 18px;
+    color: #aaa;
+    text-align: left;
+}
+
+#bpmInput {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #0d0d0d;
+    color: white;
+    font-size: 16px;
+}
+
+#sensor {
+    margin-top: 15px;
+
+    background: #0d0d0d;
+
+    border-radius: 12px;
+
+    padding: 12px;
+
+    text-align: left;
+
+    font-family: monospace;
+    font-size: 12px;
+}
+
+
+/* ==================================================
+   GRA
+================================================== */
+
+#game {
+    display: none;
+
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            ellipse at center bottom,
+            #151515 0%,
+            #050505 65%
+        );
+}
+
+#visualizer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: .95;
+    pointer-events: none;
+    z-index: 0;
+}
+
+
+/* ==================================================
+   WYNIK
+================================================== */
+
+#score {
+    position: absolute;
+
+    top: 18px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    font-size: 32px;
+    font-weight: bold;
+
+    z-index: 50;
+}
+
+#laneInfo {
+    position: absolute;
+
+    top: 60px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    color: #777;
+
+    z-index: 50;
+}
+
+#laneText {
+    color: white;
+    font-weight: bold;
+}
+
+
+/* ==================================================
+   TOR — PERSPEKTYWA GUITAR HERO
+================================================== */
+
+#track {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(-50%, -50%)
+        perspective(700px)
+        rotateX(55deg);
+
+    transform-origin:
+        center bottom;
+
+    width: 500px;
+    height: 90vh;
+
+    max-height: 850px;
+
+    /*
+       Nie zmieniamy mechaniki pozycji.
+       Cały tor jest tylko pochylony wizualnie.
+    */
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(255,255,255,.025),
+            rgba(255,255,255,.08)
+        );
+
+    border-left:
+        2px solid rgba(255,255,255,.22);
+
+    border-right:
+        2px solid rgba(255,255,255,.22);
+
+    z-index: 5;
+}
+
+
+/* ==================================================
+   DODATKOWA SIATKA TORU
+================================================== */
+
+#track::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0px,
+            transparent 70px,
+            rgba(255,255,255,.08) 71px,
+            transparent 73px
+        );
+
+    pointer-events: none;
+
+    z-index: 1;
+}
+
+
+/* ==================================================
+   LINIE TORÓW
+================================================== */
+
+.lane {
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+
+    width: 7px;
+
+    background: white;
+
+    border-radius: 10px;
+
+    z-index: 3;
+}
+
+
+/*
+   W perspektywie tory są szerzej
+   rozstawione na dole dzięki
+   pochyleniu całego toru.
+*/
+
+#leftLane {
+    left: 80px;
+}
+
+#rightLane {
+    right: 80px;
+}
+
+
+/* ==================================================
+   STRZAŁKA
+================================================== */
+
+#arrow {
+    position: absolute;
+
+    left: 80px;
+    top: 88%;
+
+    width: 52px;
+    height: 52px;
+
+    transform:
+        translate(-50%, -50%);
+
+    transition:
+        left .12s ease-out;
+
+    border: 4px solid white;
+    border-radius: 50%;
+    background: rgba(255,255,255,.18);
+    box-shadow: 0 0 20px rgba(255,255,255,.8);
+
+    z-index: 20;
+}
+
+.water-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 52px;
+    height: 52px;
+    border: 2px solid rgba(72, 190, 255, .95);
+    border-radius: 50%;
+    box-shadow:
+        0 0 12px rgba(0, 150, 255, .75),
+        inset 0 0 10px rgba(0, 150, 255, .3);
+    pointer-events: none;
+    animation: water-ripple .65s ease-out both;
+}
+
+#arrow.water-hit {
+    animation: water-hit-flash .38s ease-out;
+}
+
+@keyframes water-ripple {
+    from {
+        opacity: .95;
+        transform: translate(-50%, -50%) scale(.35);
+    }
+
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2.7);
+    }
+}
+
+@keyframes water-hit-flash {
+    0% {
+        border-color: #48beff;
+        box-shadow: 0 0 30px rgba(0, 170, 255, 1);
+    }
+
+    100% {
+        border-color: white;
+        box-shadow: 0 0 20px rgba(255, 255, 255, .8);
+    }
+}
+
+
+/* ==================================================
+   PUNKTY
+================================================== */
+
+.point {
+    position: absolute;
+
+    width: 24px;
+    height: 24px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    transform:
+        translate(-50%, -50%);
+
+    z-index: 15;
+
+    box-shadow:
+        0 0 15px
+        rgba(255,255,255,.8);
+}
+
+
+.point.hit {
+    animation:
+        hit .18s forwards;
+}
+
+.point.hold-note {
+    width: 10px;
+    border: 2px solid #cf75ff;
+    border-radius: 8px;
+    background: linear-gradient(
+        to bottom,
+        rgba(185, 65, 255, .28),
+        rgba(194, 86, 255, .95)
+    );
+    box-shadow:
+        0 0 12px rgba(180, 55, 255, .9),
+        0 0 28px rgba(150, 40, 255, .45);
+    transform: translateX(-50%);
+}
+
+.point.hold-note::before,
+.point.hold-note::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #e6b4ff;
+    border-radius: 50%;
+    background: #a52cff;
+    box-shadow: 0 0 14px rgba(180, 55, 255, .95);
+    transform: translateX(-50%);
+}
+
+.point.hold-note::before {
+    bottom: -11px;
+}
+
+.point.hold-note::after {
+    top: -11px;
+}
+
+.point.hold-note.holding {
+    filter: brightness(1.5);
+}
+
+.point.hold-note.hit {
+    animation: hold-note-hit .2s forwards;
+}
+
+@keyframes hold-note-hit {
+    to {
+        opacity: 0;
+    }
+}
+
+
+@keyframes hit {
+
+    from {
+        opacity: 1;
+
+        transform:
+            translate(-50%, -50%)
+            scale(1);
+    }
+
+    to {
+        opacity: 0;
+
+        transform:
+            translate(-50%, -50%)
+            scale(2);
+    }
+}
+
+
+/* ==================================================
+   INFORMACJE
+================================================== */
+
+#message {
+    position: absolute;
+
+    bottom: 18px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    color: #666;
+
+    font-size: 14px;
+
+    z-index: 50;
+}
+
+
+#feedback {
+    position: absolute;
+
+    top: 45%;
+    left: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    font-size: 32px;
+    font-weight: bold;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    z-index: 60;
+}
+
+
+#feedback.show {
+    animation:
+        feedback .45s ease-out;
+}
+
+
+@keyframes feedback {
+
+    0% {
+        opacity: 1;
+
+        transform:
+            translate(-50%, -50%)
+            scale(.7);
+    }
+
+    100% {
+        opacity: 0;
+
+        transform:
+            translate(-50%, -100px)
+            scale(1.2);
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+
+<!-- ==================================================
+     MENU
+================================================== -->
+
+<div id="menu">
+
+    <div class="menu-box">
+
+        <h1>🎮 Triki Guitar Hero</h1>
+
+        <label id="bpmLabel" for="bpmInput">
+            Tempo gry (BPM)
+            <input id="bpmInput"
+                   type="number"
+                   min="30"
+                   max="300"
+                   step="1"
+                   value="120"
+                   required>
+        </label>
+
+        <p>
+            Poruszaj nadgarstkiem,
+            aby zmieniać tor.
+            <br><br>
+
+            Kiedy punkt znajdzie się
+            przy strzałce,
+            <b>naciśnij przycisk Triki lub spację</b>.
+            <br><br>
+            Przytrzymaj <b>Shift</b>, aby podwoić tempo i punkty.
+            Po 5 trafieniach z rzędu następne 5 rytmów zastępuje fioletowa linia.
+            Naciśnij przy dolnej kropce i puść, gdy górna kropka dojdzie do kółka.
+        </p>
+
+        <button id="connectButton">
+            🔵 POŁĄCZ TRIKI
+        </button>
+
+        <button id="startButton" disabled>
+            ▶ START
+        </button>
+
+        <div id="status">
+            Triki nie jest podłączone
+        </div>
+
+        <div id="sensor">
+            IMU: brak danych
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ==================================================
+     GRA
+================================================== -->
+
+<div id="game">
+
+    <canvas id="visualizer"
+            aria-hidden="true">
+    </canvas>
+
+    <div id="score">
+        0
+    </div>
+
+    <div id="laneInfo">
+        TOR:
+        <span id="laneText">LEWY</span>
+        &nbsp;|&nbsp;
+        BPM:
+        <span id="bpmText">120</span>
+    </div>
+
+
+    <div id="track">
+
+        <div id="leftLane"
+             class="lane">
+        </div>
+
+        <div id="rightLane"
+             class="lane">
+        </div>
+
+        <div id="arrow">
+        </div>
+
+    </div>
+
+
+    <div id="message">
+        Czekaj na punkt...
+    </div>
+
+
+    <div id="feedback">
+        +1
+    </div>
+
+</div>
+
+
+<script>
+
+/* ==================================================
+   TRIKI — BLUETOOTH NUS
+================================================== */
+
+const NUS_SERVICE =
+    "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+
+const NUS_RX =
+    "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+const NUS_TX =
+    "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+
+/*
+   Komenda uruchamiająca IMU
+*/
+
+const START_COMMAND =
+    new Uint8Array([
+        0x20,
+        0x10,
+        0x00,
+        0xD0,
+        0x07,
+        0x68,
+        0x00,
+        0x03
+    ]);
+
+
+/* ==================================================
+   ELEMENTY
+================================================== */
+
+const menu =
+    document.getElementById(
+        "menu"
+    );
+
+const game =
+    document.getElementById(
+        "game"
+    );
+
+const visualizer =
+    document.getElementById(
+        "visualizer"
+    );
+
+const visualizerContext =
+    visualizer.getContext("2d");
+
+const connectButton =
+    document.getElementById(
+        "connectButton"
+    );
+
+const startButton =
+    document.getElementById(
+        "startButton"
+    );
+
+const bpmInput =
+    document.getElementById(
+        "bpmInput"
+    );
+
+const bpmText =
+    document.getElementById(
+        "bpmText"
+    );
+
+const status =
+    document.getElementById(
+        "status"
+    );
+
+const sensor =
+    document.getElementById(
+        "sensor"
+    );
+
+const arrow =
+    document.getElementById(
+        "arrow"
+    );
+
+const laneText =
+    document.getElementById(
+        "laneText"
+    );
+
+const scoreElement =
+    document.getElementById(
+        "score"
+    );
+
+const message =
+    document.getElementById(
+        "message"
+    );
+
+const feedback =
+    document.getElementById(
+        "feedback"
+    );
+
+
+/* ==================================================
+   BLUETOOTH
+================================================== */
+
+let device = null;
+let gatt = null;
+let rx = null;
+let tx = null;
+
+let buffer =
+    new Uint8Array(0);
+
+
+/* ==================================================
+   STEROWANIE
+================================================== */
+
+let currentLane =
+    "left";
+
+
+let filteredGyroZ =
+    0;
+
+
+let movementReady =
+    true;
+
+
+let lastSwitch =
+    0;
+
+
+/*
+   CZUŁOŚĆ
+
+   50 = czułe sterowanie
+*/
+
+const MOTION_THRESHOLD =
+    50;
+
+
+/*
+   Poniżej tej wartości
+   uznajemy ruch za zakończony.
+*/
+
+const RESET_THRESHOLD =
+    20;
+
+
+/*
+   Minimalny odstęp między
+   zmianami toru.
+*/
+
+const SWITCH_COOLDOWN =
+    160;
+
+
+/* ==================================================
+   PRZYCISK
+================================================== */
+
+let keyboardButtonHeld =
+    false;
+
+let deviceButtonHeld =
+    false;
+
+let buttonHeld =
+    false;
+
+
+/* ==================================================
+   GRA
+================================================== */
+
+let running =
+    false;
+
+
+let score =
+    0;
+
+
+let points =
+    [];
+
+
+let nextPointId =
+    0;
+
+
+let nextSpawn =
+    0;
+
+let beatInterval =
+    0;
+
+let selectedBpm =
+    120;
+
+let shiftHeld =
+    false;
+
+let successfulHitCount =
+    0;
+
+let normalHitsSinceHold =
+    0;
+
+let holdNotePending =
+    false;
+
+let pendingHoldNoteLength =
+    0;
+
+
+/* Pozycja kółka przy dolnej krawędzi toru. */
+
+const arrowY =
+    88;
+
+
+/*
+   Prędkość punktów.
+*/
+
+const POINT_SPEED =
+    180;
+
+
+/*
+   Odległość potrzebna
+   do trafienia.
+*/
+
+const HIT_DISTANCE =
+    40;
+
+const POINT_DIAMETER =
+    24;
+
+function setButtonInput(source, pressed) {
+
+    const wasHeld =
+        buttonHeld;
+
+    if (
+        source === "keyboard"
+    ) {
+
+        keyboardButtonHeld =
+            pressed;
+    } else {
+        deviceButtonHeld =
+            pressed;
+    }
+
+    buttonHeld =
+        keyboardButtonHeld ||
+        deviceButtonHeld;
+
+    if (
+        buttonHeld &&
+        !wasHeld
+    ) {
+
+        tryHit();
+    }
+
+    if (
+        wasHeld &&
+        !buttonHeld
+    ) {
+
+        releaseHoldNote();
+    }
+}
+
+function playWaterRipple() {
+
+    for (
+        let i = 0;
+        i < 3;
+        i++
+    ) {
+
+        const ripple =
+            document.createElement("span");
+
+        ripple.className =
+            "water-ripple";
+
+        ripple.style.animationDelay =
+            (i * 90) + "ms";
+
+        ripple.addEventListener(
+            "animationend",
+            () => ripple.remove(),
+            { once: true }
+        );
+
+        arrow.appendChild(ripple);
+    }
+
+    arrow.classList.remove(
+        "water-hit"
+    );
+
+    void arrow.offsetWidth;
+
+    arrow.classList.add(
+        "water-hit"
+    );
+}
+
+let visualizerWidth =
+    0;
+
+let visualizerHeight =
+    0;
+
+let visualizerParticles =
+    [];
+
+let visualizerHitPulse =
+    0;
+
+function resizeVisualizer() {
+
+    const pixelRatio =
+        Math.min(
+            window.devicePixelRatio || 1,
+            2
+        );
+
+    visualizerWidth =
+        window.innerWidth;
+
+    visualizerHeight =
+        window.innerHeight;
+
+    visualizer.width =
+        Math.round(
+            visualizerWidth *
+            pixelRatio
+        );
+
+    visualizer.height =
+        Math.round(
+            visualizerHeight *
+            pixelRatio
+        );
+
+    visualizerContext.setTransform(
+        pixelRatio,
+        0,
+        0,
+        pixelRatio,
+        0,
+        0
+    );
+
+    visualizerParticles =
+        Array.from(
+            {
+                length: Math.min(
+                    90,
+                    Math.max(
+                        35,
+                        Math.floor(
+                            visualizerWidth / 16
+                        )
+                    )
+                )
+            },
+            () => ({
+                x: Math.random() * visualizerWidth,
+                y: Math.random() * visualizerHeight,
+                size: 1 + Math.random() * 2.5,
+                speed: 8 + Math.random() * 20,
+                phase: Math.random() * Math.PI * 2
+            })
+        );
+}
+
+function drawVisualizer(now) {
+
+    const context =
+        visualizerContext;
+
+    const beatDuration =
+        beatInterval
+        ? beatInterval /
+            (shiftHeld ? 2 : 1)
+        : 500;
+
+    const beatProgress =
+        (now % beatDuration) /
+        beatDuration;
+
+    const beatPulse =
+        Math.exp(
+            -beatProgress * 7
+        );
+
+    context.clearRect(
+        0,
+        0,
+        visualizerWidth,
+        visualizerHeight
+    );
+
+    const glow =
+        context.createRadialGradient(
+            visualizerWidth * .5,
+            visualizerHeight * .68,
+            0,
+            visualizerWidth * .5,
+            visualizerHeight * .68,
+            visualizerWidth * .72
+        );
+
+    glow.addColorStop(
+        0,
+        `rgba(0, 130, 255, ${.14 + beatPulse * .16})`
+    );
+
+    glow.addColorStop(
+        .55,
+        "rgba(20, 45, 160, .12)"
+    );
+
+    glow.addColorStop(
+        1,
+        "rgba(0, 0, 0, 0)"
+    );
+
+    context.fillStyle =
+        glow;
+
+    context.fillRect(
+        0,
+        0,
+        visualizerWidth,
+        visualizerHeight
+    );
+
+    const time =
+        now / 1000;
+
+    for (
+        let wave = 0;
+        wave < 6;
+        wave++
+    ) {
+
+        const baseY =
+            visualizerHeight *
+            (.48 + wave * .075);
+
+        context.beginPath();
+
+        for (
+            let x = 0;
+            x <= visualizerWidth;
+            x += 8
+        ) {
+
+            const ratio =
+                x / visualizerWidth;
+
+            const envelope =
+                Math.sin(ratio * Math.PI);
+
+            const hitWave =
+                Math.sin(
+                    ratio * 10 -
+                    time * 3 +
+                    wave
+                ) *
+                visualizerHitPulse *
+                20 *
+                envelope;
+
+            const y =
+                baseY +
+                Math.sin(
+                    ratio * 8 +
+                    time *
+                        (.45 + wave * .035) *
+                        (1 + visualizerHitPulse * .65) +
+                    wave
+                ) *
+                (18 + wave * 5 + beatPulse * 14) *
+                (1 + visualizerHitPulse * .65) *
+                envelope +
+                Math.sin(
+                    ratio * 17 -
+                    time * .3 +
+                    wave * .8
+                ) *
+                7 *
+                envelope +
+                hitWave;
+
+            if (x === 0) {
+                context.moveTo(x, y);
+            } else {
+                context.lineTo(x, y);
+            }
+        }
+
+        context.strokeStyle =
+            wave % 2 === 0
+                ? `rgba(36, 150, 255, ${.24 + beatPulse * .2})`
+                : `rgba(115, 85, 255, ${.16 + beatPulse * .14})`;
+
+        context.lineWidth =
+            (wave === 0 ? 2.5 : 1.5) +
+            visualizerHitPulse * .6;
+
+        context.shadowColor =
+            wave % 2 === 0
+                ? "#168bff"
+                : "#6855ff";
+
+        context.shadowBlur =
+            18 +
+            beatPulse * 22 +
+            visualizerHitPulse * 14;
+
+        context.stroke();
+    }
+
+    context.shadowBlur =
+        0;
+
+    for (
+        const particle of visualizerParticles
+    ) {
+
+        particle.y -=
+            particle.speed *
+            (shiftHeld ? 2 : 1) *
+            .016;
+
+        particle.x +=
+            Math.sin(
+                time * .55 +
+                particle.phase
+            ) *
+            .25;
+
+        if (particle.y < -4) {
+            particle.y =
+                visualizerHeight + 4;
+
+            particle.x =
+                Math.random() *
+                visualizerWidth;
+        }
+
+        const alpha =
+            .25 +
+            (Math.sin(
+                time * 1.5 +
+                particle.phase
+            ) + 1) *
+            .2 +
+            beatPulse * .25;
+
+        context.beginPath();
+
+        context.arc(
+            particle.x,
+            particle.y,
+            particle.size,
+            0,
+            Math.PI * 2
+        );
+
+        context.fillStyle =
+            `rgba(125, 205, 255, ${alpha})`;
+
+        context.fill();
+    }
+
+    const vignette =
+        context.createLinearGradient(
+            0,
+            visualizerHeight * .55,
+            0,
+            visualizerHeight
+        );
+
+    vignette.addColorStop(
+        0,
+        "rgba(0, 0, 0, 0)"
+    );
+
+    vignette.addColorStop(
+        .45,
+        "rgba(0, 0, 0, .22)"
+    );
+
+    vignette.addColorStop(
+        1,
+        "rgba(0, 0, 0, .82)"
+    );
+
+    context.fillStyle =
+        vignette;
+
+    context.fillRect(
+        0,
+        0,
+        visualizerWidth,
+        visualizerHeight
+    );
+}
+
+resizeVisualizer();
+
+window.addEventListener(
+    "resize",
+    resizeVisualizer
+);
+
+function setShiftMode(held) {
+
+    if (
+        held === shiftHeld
+    ) {
+
+        return;
+    }
+
+    shiftHeld =
+        held;
+
+    if (
+        running
+    ) {
+
+        const currentBeatInterval =
+            beatInterval /
+            (shiftHeld ? 2 : 1);
+
+        nextSpawn =
+            performance.now() +
+            currentBeatInterval;
+
+        bpmText.textContent =
+            String(
+                selectedBpm *
+                (shiftHeld ? 2 : 1)
+            );
+    }
+}
+
+
+/* ==================================================
+   ZMIANA TORU
+================================================== */
+
+function changeLane(lane) {
+
+    if (
+        lane === currentLane
+    ) {
+        return;
+    }
+
+
+    currentLane =
+        lane;
+
+
+    /*
+       Lewy tor.
+    */
+
+    if (
+        lane === "left"
+    ) {
+
+        arrow.style.left =
+            "80px";
+
+        laneText.textContent =
+            "LEWY";
+
+    }
+
+
+    /*
+       Prawy tor.
+    */
+
+    else {
+
+        arrow.style.left =
+            "420px";
+
+        laneText.textContent =
+            "PRAWY";
+    }
+}
+
+
+/* ==================================================
+   WYKRYWANIE RUCHU NADGARSTKIEM
+================================================== */
+
+function detectWristMovement(z) {
+
+    /*
+       Bardziej czuły filtr.
+    */
+
+    filteredGyroZ =
+        filteredGyroZ * 0.55 +
+        z * 0.45;
+
+
+    const now =
+        performance.now();
+
+
+    /*
+       Po wykonaniu ruchu
+       czekamy na uspokojenie.
+    */
+
+    if (
+        !movementReady
+    ) {
+
+        if (
+            Math.abs(
+                filteredGyroZ
+            ) <
+            RESET_THRESHOLD
+        ) {
+
+            movementReady =
+                true;
+        }
+
+        return;
+    }
+
+
+    /*
+       Cooldown.
+    */
+
+    if (
+        now - lastSwitch <
+        SWITCH_COOLDOWN
+    ) {
+
+        return;
+    }
+
+
+    /*
+       RUCH W LEWO
+
+       Zachowane odwrócenie
+       kierunków.
+    */
+
+    if (
+        filteredGyroZ >
+        MOTION_THRESHOLD
+    ) {
+
+        changeLane(
+            "left"
+        );
+
+        movementReady =
+            false;
+
+        lastSwitch =
+            now;
+
+        return;
+    }
+
+
+    /*
+       RUCH W PRAWO.
+    */
+
+    if (
+        filteredGyroZ <
+        -MOTION_THRESHOLD
+    ) {
+
+        changeLane(
+            "right"
+        );
+
+        movementReady =
+            false;
+
+        lastSwitch =
+            now;
+    }
+}
+
+
+/* ==================================================
+   TWORZENIE PUNKTU
+================================================== */
+
+function spawnPoint() {
+
+    const activeHold =
+        points.find(
+            point =>
+                point.holdNote &&
+                !point.hit
+        );
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+    const isHoldNote =
+        holdNotePending &&
+        !activeHold;
+
+    const holdBeats =
+        isHoldNote
+            ? pendingHoldNoteLength
+            : 0;
+
+    const holdLength =
+        holdBeats *
+        POINT_SPEED *
+        (beatInterval / 1000);
+
+    if (isHoldNote) {
+        holdNotePending =
+            false;
+
+        pendingHoldNoteLength =
+            0;
+    }
+
+    element.className =
+        isHoldNote
+            ? "point hold-note"
+            : "point";
+
+
+    /*
+       Losujemy tor.
+    */
+
+    let lane;
+
+    if (activeHold) {
+        lane =
+            activeHold.lane === "left"
+                ? "right"
+                : "left";
+    } else {
+        lane =
+            Math.random() < 0.5
+                ? "left"
+                : "right";
+    }
+
+    let spawnY =
+        -20;
+
+    if (activeHold) {
+        const beatDistance =
+            POINT_SPEED *
+            (beatInterval / 1000);
+
+        spawnY =
+            activeHold.y -
+            activeHold.holdLength -
+            POINT_DIAMETER / 2 -
+            4 -
+            activeHold.sideNotesSpawned *
+                beatDistance;
+
+        activeHold.sideNotesSpawned++;
+    }
+
+    const candidateLength =
+        isHoldNote
+            ? holdLength
+            : 0;
+
+    for (
+        let attempt = 0;
+        attempt < points.length;
+        attempt++
+    ) {
+
+        const candidateTop =
+            isHoldNote
+                ? spawnY - candidateLength
+                : spawnY - POINT_DIAMETER / 2;
+
+        const candidateBottom =
+            isHoldNote
+                ? spawnY
+                : spawnY + POINT_DIAMETER / 2;
+
+        const overlappingPoint =
+            points.find(point => {
+
+                if (point.hit) {
+                    return false;
+                }
+
+                const otherTop =
+                    point.holdNote
+                        ? point.y - point.holdLength
+                        : point.y - POINT_DIAMETER / 2;
+
+                const otherBottom =
+                    point.holdNote
+                        ? point.y
+                        : point.y + POINT_DIAMETER / 2;
+
+                return (
+                    candidateBottom + 4 > otherTop &&
+                    candidateTop - 4 < otherBottom
+                );
+            });
+
+        if (!overlappingPoint) {
+            break;
+        }
+
+        const otherTop =
+            overlappingPoint.holdNote
+                ? overlappingPoint.y - overlappingPoint.holdLength
+                : overlappingPoint.y - POINT_DIAMETER / 2;
+
+        spawnY =
+            otherTop -
+            4 -
+            (isHoldNote ? 0 : POINT_DIAMETER / 2);
+    }
+
+
+    /*
+       Pozycja pozioma.
+
+       Ważne:
+       mechanika nadal ma
+       tylko dwa tory.
+    */
+
+    const x =
+        lane === "left"
+        ? 80
+        : 420;
+
+
+    element.style.left =
+        x + "px";
+
+    if (isHoldNote) {
+        element.style.height =
+            holdLength + "px";
+    }
+
+    element.style.top =
+        isHoldNote
+            ? (-20 - holdLength) + "px"
+            : spawnY + "px";
+
+
+    const point = {
+
+        id:
+            nextPointId++,
+
+        element:
+            element,
+
+        lane:
+            lane,
+
+        x:
+            x,
+
+        y:
+            spawnY,
+
+        holdNote:
+            isHoldNote,
+
+        holdBeats:
+            holdBeats,
+
+        holdLength:
+            holdLength,
+
+        sideNotesSpawned:
+            0,
+
+        holding:
+            false,
+
+        hit:
+            false
+    };
+
+
+    element.dataset.id =
+        point.id;
+
+
+    document
+        .getElementById(
+            "track"
+        )
+        .appendChild(
+            element
+        );
+
+
+    points.push(
+        point
+    );
+
+    if (isHoldNote) {
+        message.textContent =
+            "FIOLETOWA LINIA — PRZYTRZYMAJ PRZYCISK!";
+    }
+
+    return point;
+}
+
+
+/* ==================================================
+   TRAFIENIE
+================================================== */
+
+function registerSuccessfulHit(target, holdCompleted) {
+
+    target.hit =
+        true;
+
+    target.holding =
+        false;
+
+    target.element
+        .classList
+        .remove("holding");
+
+    target.element
+        .classList
+        .add("hit");
+
+    playWaterRipple();
+
+    successfulHitCount++;
+
+    if (holdCompleted) {
+        normalHitsSinceHold = 0;
+    } else {
+        normalHitsSinceHold++;
+
+        if (normalHitsSinceHold >= 5) {
+            holdNotePending = true;
+            pendingHoldNoteLength =
+                normalHitsSinceHold;
+            normalHitsSinceHold = 0;
+        }
+    }
+
+    const effectiveBpm =
+        selectedBpm *
+        (shiftHeld ? 2 : 1);
+
+    if (
+        effectiveBpm <= 150 ||
+        successfulHitCount % 2 === 0
+    ) {
+
+        visualizerHitPulse =
+            .45;
+    }
+
+    const pointsEarned =
+        shiftHeld ? 2 : 1;
+
+    score +=
+        pointsEarned;
+
+    scoreElement.textContent =
+        score;
+
+    message.textContent =
+        "TRAFIENIE!";
+
+    feedback.textContent =
+        "+" + pointsEarned;
+
+    feedback.classList.remove(
+        "show"
+    );
+
+    void feedback.offsetWidth;
+
+    feedback.classList.add(
+        "show"
+    );
+
+    setTimeout(
+        () => {
+
+            if (
+                target.element.parentNode
+            ) {
+
+                target.element.remove();
+            }
+        },
+        180
+    );
+}
+
+function missPoint(point, index) {
+
+    point.holding =
+        false;
+
+    point.element.remove();
+    points.splice(index, 1);
+    normalHitsSinceHold = 0;
+    holdNotePending = false;
+    pendingHoldNoteLength = 0;
+    message.textContent = "PUDŁO!";
+}
+
+function releaseHoldNote() {
+
+    const holdPoint =
+        points.find(
+            point => point.holding
+        );
+
+    if (!holdPoint) {
+        return;
+    }
+
+    const index =
+        points.indexOf(holdPoint);
+
+    const releaseEndY =
+        holdPoint.y -
+        holdPoint.holdLength;
+
+    if (
+        holdPoint.lane === currentLane &&
+        Math.abs(
+            releaseEndY -
+            arrowYToPixels()
+        ) <= HIT_DISTANCE
+    ) {
+
+        registerSuccessfulHit(
+            holdPoint,
+            true
+        );
+    } else {
+
+        missPoint(
+            holdPoint,
+            index
+        );
+    }
+}
+
+function tryHit() {
+
+    if (
+        !running
+    ) {
+
+        return;
+    }
+
+
+    let target =
+        null;
+
+
+    let closest =
+        Infinity;
+
+
+    /*
+       Szukamy najbliższego
+       punktu na aktualnym torze.
+    */
+
+    for (
+        const point of points
+    ) {
+
+        if (
+            point.hit ||
+            point.holding
+        ) {
+
+            continue;
+        }
+
+
+        if (
+            point.lane !==
+            currentLane
+        ) {
+
+            continue;
+        }
+
+
+        const distance =
+            Math.abs(
+                point.y -
+                arrowYToPixels()
+            );
+
+
+        if (
+            distance <
+            closest
+        ) {
+
+            closest =
+                distance;
+
+            target =
+                point;
+        }
+    }
+
+
+    /*
+       TRAFIENIE
+    */
+
+    if (
+        target &&
+        closest <=
+        HIT_DISTANCE
+    ) {
+
+        if (target.holdNote) {
+            target.holding = true;
+            target.element.classList.add("holding");
+            message.textContent =
+                "TRZYMAJ — PUŚĆ, GDY FIOLETOWA KROPKA TRAFI W KÓŁKO!";
+        } else {
+            registerSuccessfulHit(target, false);
+        }
+
+    }
+
+    else {
+
+        message.textContent =
+            "PUDŁO!";
+
+        normalHitsSinceHold =
+            0;
+
+        holdNotePending =
+            false;
+
+        pendingHoldNoteLength =
+            0;
+
+    }
+}
+
+
+/* ==================================================
+   POZYCJA STRZAŁKI
+================================================== */
+
+function arrowYToPixels() {
+
+    const track =
+        document.getElementById(
+            "track"
+        );
+
+
+    return (
+        track.clientHeight *
+        arrowY /
+        100
+    );
+}
+
+
+/* ==================================================
+   ODCZYT RAMKI TRIKI
+================================================== */
+
+function decodeFrame(frame) {
+
+    if (
+        frame.length !== 14
+    ) {
+
+        return;
+    }
+
+
+    /*
+       Początek ramki IMU.
+    */
+
+    if (
+        frame[0] !== 0x22
+    ) {
+
+        return;
+    }
+
+
+    /*
+       Stan przycisku.
+    */
+
+    const buttonPressed =
+        frame[1] === 1;
+
+
+    setButtonInput(
+        "device",
+        buttonPressed
+    );
+
+
+    const view =
+        new DataView(
+            frame.buffer,
+            frame.byteOffset,
+            frame.byteLength
+        );
+
+
+    /*
+       GYROSKOP
+    */
+
+    const gx =
+        view.getInt16(
+            2,
+            true
+        ) / 131;
+
+
+    const gy =
+        view.getInt16(
+            4,
+            true
+        ) / 131;
+
+
+    const gz =
+        view.getInt16(
+            6,
+            true
+        ) / 131;
+
+
+    /*
+       AKCELEROMETR
+    */
+
+    const ax =
+        view.getInt16(
+            8,
+            true
+        ) / 2048;
+
+
+    const ay =
+        view.getInt16(
+            10,
+            true
+        ) / 2048;
+
+
+    const az =
+        view.getInt16(
+            12,
+            true
+        ) / 2048;
+
+
+    /*
+       Debug.
+    */
+
+    sensor.textContent =
+`BUTTON: ${
+    buttonPressed
+    ? "PRESSED"
+    : "released"
+}
+
+GYRO
+X: ${gx.toFixed(1)}
+Y: ${gy.toFixed(1)}
+Z: ${gz.toFixed(1)}
+
+ACCEL
+X: ${ax.toFixed(2)}
+Y: ${ay.toFixed(2)}
+Z: ${az.toFixed(2)}`;
+
+
+    /*
+       Sterowanie nadal
+       korzysta wyłącznie z Z.
+    */
+
+    detectWristMovement(
+        gz
+    );
+}
+
+
+/* ==================================================
+   PARSER BLE
+================================================== */
+
+function parseBLEChunk(chunk) {
+
+    const merged =
+        new Uint8Array(
+            buffer.length +
+            chunk.length
+        );
+
+
+    merged.set(
+        buffer,
+        0
+    );
+
+
+    merged.set(
+        chunk,
+        buffer.length
+    );
+
+
+    buffer =
+        merged;
+
+
+    while (
+        buffer.length >= 14
+    ) {
+
+        let start =
+            -1;
+
+
+        /*
+           Szukamy początku
+           poprawnej ramki.
+        */
+
+        for (
+            let i = 0;
+            i < buffer.length;
+            i++
+        ) {
+
+            if (
+                buffer[i] === 0x22 &&
+                i + 1 <
+                buffer.length &&
+                (
+                    buffer[i + 1] === 0 ||
+                    buffer[i + 1] === 1
+                )
+            ) {
+
+                start =
+                    i;
+
+                break;
+            }
+        }
+
+
+        /*
+           Brak ramki.
+        */
+
+        if (
+            start === -1
+        ) {
+
+            buffer =
+                buffer.slice(
+                    Math.max(
+                        0,
+                        buffer.length - 1
+                    )
+                );
+
+            return;
+        }
+
+
+        /*
+           Usuwamy śmieci
+           przed ramką.
+        */
+
+        if (
+            start > 0
+        ) {
+
+            buffer =
+                buffer.slice(
+                    start
+                );
+        }
+
+
+        /*
+           Czekamy na całą ramkę.
+        */
+
+        if (
+            buffer.length < 14
+        ) {
+
+            return;
+        }
+
+
+        /*
+           14 bajtów.
+        */
+
+        const frame =
+            buffer.slice(
+                0,
+                14
+            );
+
+
+        buffer =
+            buffer.slice(
+                14
+            );
+
+
+        decodeFrame(
+            frame
+        );
+    }
+}
+
+
+/* ==================================================
+   ODBIÓR BLE
+================================================== */
+
+function onNotification(event) {
+
+    const value =
+        event.target.value;
+
+
+    if (
+        !value
+    ) {
+
+        return;
+    }
+
+
+    const bytes =
+        new Uint8Array(
+            value.buffer,
+            value.byteOffset,
+            value.byteLength
+        );
+
+
+    parseBLEChunk(
+        bytes
+    );
+}
+
+
+/* ==================================================
+   POŁĄCZENIE TRIKI
+================================================== */
+
+connectButton.addEventListener(
+    "click",
+    async () => {
+
+        try {
+
+            if (
+                !navigator.bluetooth
+            ) {
+
+                status.textContent =
+                    "❌ Web Bluetooth nie jest dostępny.";
+
+                return;
+            }
+
+
+            status.textContent =
+                "🔍 Wybierz TRIKI...";
+
+
+            device =
+                await navigator.bluetooth
+                    .requestDevice({
+
+                        filters: [
+
+                            {
+                                namePrefix:
+                                    "TRIKI"
+                            },
+
+                            {
+                                namePrefix:
+                                    "Triki"
+                            }
+
+                        ],
+
+                        optionalServices: [
+                            NUS_SERVICE
+                        ]
+                    });
+
+
+            status.textContent =
+                "🔗 Łączenie...";
+
+
+            gatt =
+                await device.gatt.connect();
+
+
+            const service =
+                await gatt
+                    .getPrimaryService(
+                        NUS_SERVICE
+                    );
+
+
+            rx =
+                await service
+                    .getCharacteristic(
+                        NUS_RX
+                    );
+
+
+            tx =
+                await service
+                    .getCharacteristic(
+                        NUS_TX
+                    );
+
+
+            await tx
+                .startNotifications();
+
+
+            tx.addEventListener(
+                "characteristicvaluechanged",
+                onNotification
+            );
+
+
+            buffer =
+                new Uint8Array(0);
+
+
+            setButtonInput(
+                "device",
+                false
+            );
+
+
+            /*
+               Start IMU.
+            */
+
+            await rx.writeValue(
+                START_COMMAND
+            );
+
+
+            status.textContent =
+                "🟢 TRIKI POŁĄCZONE";
+
+
+            startButton.disabled =
+                false;
+
+
+            device.addEventListener(
+                "gattserverdisconnected",
+                () => {
+
+                    status.textContent =
+                        "🔴 TRIKI ROZŁĄCZONE";
+
+                    startButton.disabled =
+                        true;
+                }
+            );
+
+
+        }
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                error
+            );
+
+
+            status.textContent =
+                "❌ " +
+                error.message;
+        }
+    }
+);
+
+
+/* ==================================================
+   START GRY
+================================================== */
+
+startButton.addEventListener(
+    "click",
+    () => {
+
+        if (
+            !bpmInput.reportValidity()
+        ) {
+
+            return;
+        }
+
+        selectedBpm =
+            Number(bpmInput.value);
+
+        beatInterval =
+            60000 / selectedBpm;
+
+        bpmText.textContent =
+            String(
+                selectedBpm *
+                (shiftHeld ? 2 : 1)
+            );
+
+        menu.style.display =
+            "none";
+
+
+        game.style.display =
+            "block";
+
+
+        score =
+            0;
+
+        successfulHitCount =
+            0;
+
+        normalHitsSinceHold =
+            0;
+
+        holdNotePending =
+            false;
+
+        pendingHoldNoteLength =
+            0;
+
+        keyboardButtonHeld =
+            false;
+
+        deviceButtonHeld =
+            false;
+
+        buttonHeld =
+            false;
+
+        visualizerHitPulse =
+            0;
+
+
+        scoreElement.textContent =
+            "0";
+
+
+        /*
+           Czyszczenie punktów.
+        */
+
+        points.forEach(
+            point => {
+
+                point.element.remove();
+            }
+        );
+
+
+        points =
+            [];
+
+
+        /*
+           Reset sterowania.
+        */
+
+        currentLane =
+            "left";
+
+
+        filteredGyroZ =
+            0;
+
+
+        movementReady =
+            true;
+
+
+        lastSwitch =
+            0;
+
+
+        arrow.style.left =
+            "80px";
+
+
+        laneText.textContent =
+            "LEWY";
+
+
+        nextSpawn =
+            performance.now() +
+            beatInterval /
+            (shiftHeld ? 2 : 1);
+
+
+        running =
+            true;
+
+
+        startGame();
+    }
+);
+
+
+/* ==================================================
+   PĘTLA GRY
+================================================== */
+
+let lastTime =
+    performance.now();
+
+
+function startGame() {
+
+    lastTime =
+        performance.now();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+}
+
+
+function gameLoop(now) {
+
+    if (
+        !running
+    ) {
+
+        return;
+    }
+
+
+    const dt =
+        Math.min(
+            (now - lastTime) /
+            1000,
+            0.05
+        );
+
+
+    lastTime =
+        now;
+
+    visualizerHitPulse *=
+        Math.exp(-dt * 3.5);
+
+    drawVisualizer(now);
+
+
+    /* ================================================
+       SPAWN PUNKTÓW
+    ================================================ */
+
+    if (
+        now >= nextSpawn
+    ) {
+
+        const currentBeatInterval =
+            beatInterval /
+            (shiftHeld ? 2 : 1);
+
+        const elapsedBeats =
+            Math.floor(
+                (now - nextSpawn) /
+                currentBeatInterval
+            ) + 1;
+
+        spawnPoint();
+
+        nextSpawn +=
+            elapsedBeats *
+            currentBeatInterval;
+    }
+
+
+    /* ================================================
+       RUCH PUNKTÓW
+    ================================================ */
+
+    const track =
+        document.getElementById(
+            "track"
+        );
+
+
+    for (
+        let i = points.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const point =
+            points[i];
+
+
+        if (
+            point.hit
+        ) {
+
+            continue;
+        }
+
+
+        point.y +=
+            POINT_SPEED *
+            (shiftHeld ? 2 : 1) *
+            dt;
+
+
+        point.element.style.top =
+            point.holdNote
+                ? (point.y - point.holdLength) + "px"
+                : point.y + "px";
+
+        if (point.holding) {
+
+            if (
+                currentLane !== point.lane
+            ) {
+
+                missPoint(point, i);
+                continue;
+            }
+
+            if (
+                point.y -
+                point.holdLength >
+                arrowYToPixels() +
+                HIT_DISTANCE
+            ) {
+
+                missPoint(point, i);
+            }
+
+            continue;
+        }
+
+
+        /*
+           Punkt wyleciał
+           poza ekran.
+        */
+
+        if (
+            point.y >
+            arrowYToPixels() + HIT_DISTANCE ||
+            point.y >
+            track.clientHeight + 30
+        ) {
+
+            missPoint(point, i);
+        }
+    }
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+}
+
+
+/* ==================================================
+   KLAWIATURA — TEST
+================================================== */
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key ===
+            "Shift"
+        ) {
+
+            setShiftMode(true);
+        }
+
+
+        /*
+           Strzałka w lewo.
+        */
+
+        if (
+            event.key ===
+            "ArrowLeft"
+        ) {
+
+            changeLane(
+                "left"
+            );
+        }
+
+
+        /*
+           Strzałka w prawo.
+        */
+
+        if (
+            event.key ===
+            "ArrowRight"
+        ) {
+
+            changeLane(
+                "right"
+            );
+        }
+
+
+        /*
+           Spacja =
+           przycisk Triki.
+        */
+
+        if (
+            event.code ===
+            "Space"
+        ) {
+
+            event.preventDefault();
+
+            setButtonInput(
+                "keyboard",
+                true
+            );
+        }
+    }
+);
+
+document.addEventListener(
+    "keyup",
+    event => {
+
+        if (
+            event.code ===
+            "Space"
+        ) {
+
+            setButtonInput(
+                "keyboard",
+                false
+            );
+        }
+
+        if (
+            event.key ===
+            "Shift"
+        ) {
+
+            setShiftMode(false);
+        }
+    }
+);
+
+window.addEventListener(
+    "blur",
+    () => {
+
+        setButtonInput(
+            "keyboard",
+            false
+        );
+
+        setShiftMode(false);
+    }
+);
+
+
+/* ==================================================
+   STARTOWY STAN
+================================================== */
+
+arrow.style.left =
+    "80px";
+
+
+laneText.textContent =
+    "LEWY";
+
+</script>
+
+</body>
+</html>
