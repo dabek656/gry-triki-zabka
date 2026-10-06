@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triki Guitar Hero Style</title>
+
+<link rel="stylesheet" href="css/gra.css">
+</head>
+
+<body>
+
+
+<!-- ==================================================
+     MENU
+================================================== -->
+
+<div id="menu">
+
+    <div class="menu-box">
+
+        <h1>🎮 Triki Guitar Hero</h1>
+
+        <div id="menuBestScore">
+            REKORD: 0
+        </div>
+
+        <label id="bpmLabel" for="bpmInput">
+            Tempo gry (BPM)
+            <input id="bpmInput"
+                   type="number"
+                   min="30"
+                   max="300"
+                   step="1"
+                   value="120"
+                   required>
+        </label>
+
+        <label id="youtubeLabel" for="youtubeInput">
+            Link do muzyki z YouTube (opcjonalnie)
+            <input id="youtubeInput"
+                   type="url"
+                   placeholder="https://www.youtube.com/watch?v=..."
+                   autocomplete="url">
+        </label>
+        <label id="recentSongsLabel" for="recentSongs">
+            Ostatnio używane piosenki
+            <select id="recentSongs">
+                <option value="">Wybierz zapisaną piosenkę...</option>
+            </select>
+        </label>
+        <div id="musicStatus" role="status">
+            Muzyka zacznie grać po naciśnięciu START. Strona musi być otwarta
+            przez HTTP/HTTPS; niektóre filmy nie pozwalają na osadzanie.
+        </div>
+
+        <p>
+            Poruszaj nadgarstkiem,
+            aby zmieniać tor.
+            <br><br>
+
+            Kiedy punkt znajdzie się
+            przy strzałce,
+            <b>naciśnij przycisk Triki lub spację</b>.
+            <br><br>
+            Przytrzymaj <b>Shift</b>, aby podwoić tempo i punkty.
+            Po 5 trafieniach z rzędu następne 5 rytmów zastępuje fioletowa linia.
+            Naciśnij przy dolnej kropce i puść, gdy górna kropka dojdzie do kółka.
+            <br><br>
+            Możesz grać bez Triki: użyj <b>←</b> i <b>→</b>, aby zmieniać tor,
+            oraz <b>spacji</b>, aby naciskać przycisk.
+        </p>
+
+        <button id="connectButton">
+            🔵 POŁĄCZ TRIKI
+        </button>
+
+        <button id="startButton">
+            ▶ START
+        </button>
+
+        <div id="status">
+            Triki nie jest podłączone
+        </div>
+
+        <div id="sensor">
+            IMU: brak danych
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ==================================================
+     GRA
+================================================== -->
+
+<div id="game">
+
+    <canvas id="visualizer"
+            aria-hidden="true">
+    </canvas>
+
+    <iframe id="youtubePlayer"
+            title="Odtwarzacz YouTube"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+            hidden>
+    </iframe>
+
+    <div id="score">
+        0
+    </div>
+
+    <div id="bestScore">
+        REKORD: 0
+    </div>
+
+    <div id="laneInfo">
+        TOR:
+        <span id="laneText">LEWY</span>
+        &nbsp;|&nbsp;
+        BPM:
+        <span id="bpmText">120</span>
+    </div>
+
+
+    <div id="track">
+
+        <div id="leftLane"
+             class="lane">
+        </div>
+
+        <div id="rightLane"
+             class="lane">
+        </div>
+
+        <div id="arrow">
+        </div>
+
+    </div>
+
+
+    <div id="message">
+        Czekaj na punkt...
+    </div>
+
+
+    <div id="feedback">
+        +1
+    </div>
+
+</div>
+
+
+<script src="js/core.js"></script>
+<script src="js/visualizer.js"></script>
+<script src="js/gameplay.js"></script>
+<script src="js/bluetooth.js"></script>
+<script src="js/music.js"></script>
+<script src="js/game-loop.js"></script>
+
+</body>
+</html>
