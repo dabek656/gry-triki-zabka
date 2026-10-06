@@ -573,13 +573,16 @@ button:disabled {
             Przytrzymaj <b>Shift</b>, aby podwoić tempo i punkty.
             Po 5 trafieniach z rzędu następne 5 rytmów zastępuje fioletowa linia.
             Naciśnij przy dolnej kropce i puść, gdy górna kropka dojdzie do kółka.
+            <br><br>
+            Możesz grać bez Triki: użyj <b>←</b> i <b>→</b>, aby zmieniać tor,
+            oraz <b>spacji</b>, aby naciskać przycisk.
         </p>
 
         <button id="connectButton">
             🔵 POŁĄCZ TRIKI
         </button>
 
-        <button id="startButton" disabled>
+        <button id="startButton">
             ▶ START
         </button>
 
@@ -2388,19 +2391,17 @@ connectButton.addEventListener(
                 "🟢 TRIKI POŁĄCZONE";
 
 
-            startButton.disabled =
-                false;
-
-
             device.addEventListener(
                 "gattserverdisconnected",
                 () => {
 
+                    setButtonInput(
+                        "device",
+                        false
+                    );
+
                     status.textContent =
                         "🔴 TRIKI ROZŁĄCZONE";
-
-                    startButton.disabled =
-                        true;
                 }
             );
 
